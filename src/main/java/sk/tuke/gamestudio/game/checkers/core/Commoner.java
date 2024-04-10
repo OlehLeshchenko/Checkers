@@ -20,14 +20,28 @@ public class Commoner extends Piece {
         for (int xOffset = -1; xOffset <= 1; xOffset += 2) {
 
             Move move = createMoveFromPosition(field, x, y, xOffset, yOffset);
+            Move moveBack = createMoveFromPosition(field, x, y, xOffset, yOffset*-1);
             if (move != null) {
                 if (move.isCaptured()) {
-                    if (!isCapturedMoveDetected) possibleMoves.clear();
-                    possibleMoves.add(move);
-                    isCapturedMoveDetected = true;
-                } else if (!isCapturedMoveDetected) possibleMoves.add(move);
+                    isCapturedMoveDetected = addMoveToPossibleMoves(isCapturedMoveDetected, possibleMoves, move);
+                }
+                else if (!isCapturedMoveDetected) possibleMoves.add(move);
+            }
+
+            if (moveBack != null && moveBack.isCaptured()) {
+                isCapturedMoveDetected = addMoveToPossibleMoves(isCapturedMoveDetected, possibleMoves, moveBack);
             }
         }
+
         return possibleMoves;
+    }
+
+    private static boolean addMoveToPossibleMoves(boolean isCapturedMoveDetected, List<Move> possibleMoves, Move move) {
+        if (!isCapturedMoveDetected){
+            possibleMoves.clear();
+            isCapturedMoveDetected = true;
+        }
+        possibleMoves.add(move);
+        return isCapturedMoveDetected;
     }
 }

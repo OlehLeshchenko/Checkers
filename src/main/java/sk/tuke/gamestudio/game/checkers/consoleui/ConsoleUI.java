@@ -1,10 +1,8 @@
 package sk.tuke.gamestudio.game.checkers.consoleui;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StopWatch;
-import sk.tuke.gamestudio.entity.Comment;
-import sk.tuke.gamestudio.entity.Rating;
-import sk.tuke.gamestudio.entity.Save;
-import sk.tuke.gamestudio.entity.Score;
+import sk.tuke.gamestudio.entity.*;
 import sk.tuke.gamestudio.game.checkers.core.*;
 import sk.tuke.gamestudio.service.*;
 
@@ -13,6 +11,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ConsoleUI {
+
+    @Autowired
+    private ScoreService scoreService;
+
+    @Autowired
+    private CommentService commentService;
+
+    @Autowired
+    private RatingService ratingService;
+
+    @Autowired
+    private SaveService saveService;
+
     private static final String GAME = "checkers";
 
     private static final String ANSI_RESET = "\u001B[0m";
@@ -29,16 +40,10 @@ public class ConsoleUI {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("([0-9]+)");
 
     private final Scanner scanner = new Scanner(System.in);
-    private final ScoreService scoreService = new ScoreServiceJDBC();
-    private final CommentService commentService = new CommentServiceJDBC();
-    private final RatingService ratingService = new RatingServiceJDBC();
-    private final SaveService saveService = new SaveServiceJDBC();
-
-    private Field field;
-    private String player;
-    private int previousTime = 0;
     private final List<Tile> possibleTilesToMove = new ArrayList<>();
     private final StopWatch stopWatch = new StopWatch();
+    private Field field;
+    private String player;
 
     public ConsoleUI(Field field) {
         this.field = field;
@@ -47,6 +52,7 @@ public class ConsoleUI {
     public void play() {
         field.generate();
         System.out.print("\n\u001B[1;34m              --- Welcome to the game of Checkers! ---\n\n" + ANSI_RESET);
+        printGameRating();
         printTopScores();
         if (!login()) setGameMode();
         printListOfCommands();
@@ -58,17 +64,17 @@ public class ConsoleUI {
 
         show();
         stopWatch.stop();
+        field.incrementPlayedTime((int) stopWatch.getTotalTimeSeconds());
         switch (field.getState()) {
             case WHITE_WON -> {
                 printWhiteVictory();
-                calculateGameScore();
+                if (field.getBot().isActive()) printGameScore();
             }
             case BLACK_WON -> printBlackVictory();
         }
         rateGame();
         leaveComment();
         printLastComments();
-        printLastRatings();
         createNewGame();
     }
 
@@ -83,13 +89,13 @@ public class ConsoleUI {
         System.out.print("\nHello, " + line + "!\n\n");
 
         setPlayer(line);
-        List<Save> playerSaves = saveService.getSaves(GAME).stream().filter(save -> save.getPlayer().equals(player)).toList();
+        List<Save> playerSaves = saveService.getSaves(GAME, player);
 
         if (!playerSaves.isEmpty()) {
 
             if (yesNoInput("Do you want to load your previous game(Y/N): ")) {
                 for (int i = 0; i < playerSaves.size(); i++) {
-                    System.out.printf("%d: %s\n", i + 1, playerSaves.get(i).getSavedAt());
+                    System.out.printf("Save %d: %s\n", i + 1, playerSaves.get(i).getSavedOn());
                 }
 
                 do {
@@ -99,7 +105,6 @@ public class ConsoleUI {
                 System.out.println();
 
                 setField(playerSaves.get(Integer.parseInt(line) - 1).getSave());
-                previousTime = playerSaves.get(Integer.parseInt(line) - 1).getPlayedTime();
                 return true;
             }
         }
@@ -136,7 +141,7 @@ public class ConsoleUI {
         this.player = player;
     }
 
-    private boolean yesNoInput(String text){
+    private boolean yesNoInput(String text) {
         String line;
         do {
             System.out.print(text);
@@ -154,8 +159,8 @@ public class ConsoleUI {
                 System.out.print("Game Rating: ");
                 line = scanner.nextLine().trim().toUpperCase();
             } while (!NUMBER_PATTERN.matcher(line).matches() || Integer.parseInt(line) < 1 || Integer.parseInt(line) > 5);
-
             ratingService.setRating(new Rating(player, GAME, Integer.parseInt(line), new Date()));
+            System.out.println();
         }
     }
 
@@ -167,58 +172,36 @@ public class ConsoleUI {
             line = scanner.nextLine().trim();
             if (line.length() > 250) line = line.substring(0, 250);
             commentService.addComment(new Comment(player, GAME, line, new Date()));
+            System.out.println();
         }
-
     }
 
     private void createNewGame() {
         if (yesNoInput("Do you want to play the game again? (Y/N): ")) {
             setField(new Field());
             play();
-        }
+        } else System.out.println(ANSI_YELLOW + "See you next time! We hope you'll play another game!" + ANSI_RESET);
     }
 
-    private void calculateGameScore() {
+    private void printGameScore() {
         final String ANSI_YELLOW_BOLD = "\u001B[1;33m";
         System.out.println("----------------------------------------------------------------------");
         System.out.print("\n\u001B[1;34m                         --- Your Score! ---\n\n" + ANSI_RESET);
-        int points = 0;
-        List<Piece> playerPieces = Arrays.stream(field.getTiles()).flatMap(Arrays::stream).filter(tile -> tile instanceof Piece && ((Piece) tile).getColor().equals(PieceColor.WHITE)).map(tile -> (Piece) tile).toList();
+        CurrentPlayerScores scores = field.getScores();
 
-        int commonerCount = playerPieces.stream().filter(piece -> piece instanceof Commoner).toList().size();
-        points += commonerCount * 75;
+        int total = scores.getCommonerPoints() + scores.getKingPoints() + scores.getTimePoints();
 
-        int kingCount = playerPieces.stream().filter(piece -> piece instanceof King).toList().size();
+        scoreService.addScore(new Score(player, GAME, total, new Date()));
 
-        points += calculateKingPoints(kingCount);
+        System.out.println("Amount of commoners: " + scores.getCommonersCount());
+        System.out.println(ANSI_YELLOW_BOLD + "                                                  " + scores.getCommonerPoints() + ANSI_RESET);
 
-        int minutes = Math.floorDiv((int) (stopWatch.getTotalTimeSeconds() + previousTime), 60);
+        System.out.println("Amount of kings: " + scores.getKingsCount());
+        System.out.println(ANSI_YELLOW_BOLD + "                                                  " + scores.getKingPoints() + ANSI_RESET);
 
-        points += 10000 - minutes * 250;
-
-        scoreService.addScore(new Score(player, GAME, points, new Date()));
-
-        System.out.println("Amount of commoners: " + commonerCount);
-        System.out.println(ANSI_YELLOW_BOLD + "                                                  " + commonerCount * 75 + ANSI_RESET);
-
-        System.out.println("Amount of kings: " + kingCount);
-        System.out.println(ANSI_YELLOW_BOLD + "                                                  " + calculateKingPoints(kingCount) + ANSI_RESET);
-
-        System.out.println("Amount of played minutes: " + minutes);
-        System.out.println(ANSI_YELLOW_BOLD + "                                                  " + (10000 - minutes * 250) + ANSI_RESET);
-        System.out.println("\n\u001B[1;34mScore:        " + ANSI_RESET + ANSI_YELLOW_BOLD + points + ANSI_RESET);
-    }
-
-    private int calculateKingPoints(int numberOfKings) {
-        int points = 0;
-        int kingValue = 150;
-
-        for (int i = 0; i < numberOfKings; i++) {
-            points += kingValue;
-            kingValue *= 2;
-        }
-
-        return points;
+        System.out.println("Amount of played minutes: " + scores.getMinutes());
+        System.out.println(ANSI_YELLOW_BOLD + "                                                  " + scores.getTimePoints() + ANSI_RESET);
+        System.out.println("\n\u001B[1;34mScore:        " + ANSI_RESET + ANSI_YELLOW_BOLD + total + ANSI_RESET + "\n");
     }
 
     private void processInput() {
@@ -231,52 +214,49 @@ public class ConsoleUI {
         Tile from = getTile(TILE_PATTERN.matcher(line));
 
         System.out.println();
-        if (from != null)
-            processMove(from, capturingPieces);
-        else if (RULES_PATTERN.matcher(line).matches())
-            printRules();
+        if (from != null) processMove(from, capturingPieces);
+        else if (RULES_PATTERN.matcher(line).matches()) printRules();
         else if (EXIT_PATTERN.matcher(line).matches()) {
             stopWatch.stop();
-            saveService.addSave(new Save(player, GAME, field, new Date(), (int) stopWatch.getTotalTimeSeconds() + previousTime));
+            field.incrementPlayedTime((int) stopWatch.getTotalTimeSeconds());
+            saveService.addSave(new Save(player, GAME, field, new Date()));
+            System.out.println(ANSI_YELLOW + "This game will be saved!" + ANSI_RESET);
             System.exit(0);
-        }
-        else if (HELP_PATTERN.matcher(line).matches())
-            printListOfCommands();
+        } else if (HELP_PATTERN.matcher(line).matches()) printListOfCommands();
         else System.out.println(ANSI_RED + "Bad input!" + ANSI_RESET);
 
     }
 
     private void processMove(Tile from, List<Piece> capturingPieces) {
         String line;
-        if (from instanceof Piece) {
-            List<Move> possibleMoves = getPossibleMovesWithChecking(from, capturingPieces);
-            if (possibleMoves == null) return;
+        if (!(from instanceof Piece)) {
+            System.out.println(ANSI_RED + "There is no piece on the selected tile!" + ANSI_RESET);
+            return;
+        }
 
-            showPossibleMoves(possibleMoves);
+        List<Move> possibleMoves = getPossibleMovesWithChecking(from, capturingPieces);
+        if (possibleMoves == null) return;
 
-            System.out.print("Enter which tile you want to move to: ");
-            line = scanner.nextLine().trim().toUpperCase();
-            Tile to = getTile(TILE_PATTERN.matcher(line));
-            System.out.println();
+        showPossibleMoves(possibleMoves);
 
-            Move move = possibleMoves.stream()
-                    .filter(item -> item.getToTile()
-                            .equals(to))
-                    .findFirst().orElse(null);
+        System.out.print("Enter which tile you want to move to: ");
+        line = scanner.nextLine().trim().toUpperCase();
+        Tile to = getTile(TILE_PATTERN.matcher(line));
+        System.out.println();
 
-            if (move != null) {
-                field.makeMove(move);
-                if (!field.getBot().isActive())
-                    System.out.println("Change team to " + (field.getCurrentPlayer() != PieceColor.WHITE ? "Black" : "White"));
-                else if(field.getCurrentPlayer().equals(PieceColor.BLACK)){
-                    show();
-                    System.out.println("\n----------------------------------\n--- The bot has made its move! ---\n----------------------------------\n");
-                    field.makeBotMove();
-                }
-            } else if (EXIT_PATTERN.matcher(line).matches()) return;
-            else System.out.println(ANSI_RED + "This piece cannot go to the selected tile!" + ANSI_RESET);
+        Move move = possibleMoves.stream().filter(item -> item.getTo().equals(to)).findFirst().orElse(null);
 
-        } else System.out.println(ANSI_RED + "There is no piece on the selected tile!" + ANSI_RESET);
+        if (move != null) {
+            field.makeMove(move);
+            if (!field.getBot().isActive())
+                System.out.println("Change team to " + (field.getCurrentPlayer() != PieceColor.WHITE ? "Black" : "White"));
+            else if (field.getCurrentPlayer().equals(PieceColor.BLACK)) {
+                show();
+                System.out.println("\n----------------------------------\n--- The bot has made its move! ---\n----------------------------------\n");
+                field.makeBotMove();
+            }
+        } else if (!EXIT_PATTERN.matcher(line).matches())
+            System.out.println(ANSI_RED + "This piece cannot go to the selected tile!" + ANSI_RESET);
     }
 
     private Tile getTile(Matcher matcher) {
@@ -312,9 +292,7 @@ public class ConsoleUI {
     }
 
     private void showPossibleMoves(List<Move> possibleMoves) {
-        possibleMoves.forEach(move -> {
-            possibleTilesToMove.add(move.getToTile());
-        });
+        possibleMoves.forEach(move -> possibleTilesToMove.add(move.getTo()));
         show();
         printPossibleMoves(possibleMoves);
         possibleTilesToMove.clear();
@@ -323,55 +301,50 @@ public class ConsoleUI {
     private void printFieldBody() {
         Tile[][] tiles = field.getTiles();
         for (int row = 0; row < 8; row++) {
-            System.out.print(ANSI_BLUE + (8 - row) + ANSI_RESET);
-            for (int column = 0; column < 8; column++) {
+            System.out.print(ANSI_BLUE + (8 - row) + ANSI_RESET + " ");
+            for (int column = 0; column < 8; column++)
                 printTile(tiles[row][column]);
-            }
-            System.out.print("|");
             System.out.println();
         }
     }
 
     private void printColumnLegends() {
         System.out.print("  ");
-        for (int i = 0; i < field.getColumnCount(); i++) {
-            System.out.print(ANSI_BLUE + " " + (char) ('a' + i) + "  " + ANSI_RESET);
-        }
+        for (int i = 0; i < field.getColumnCount(); i++)
+            System.out.print(ANSI_BLUE + " " + (char) ('a' + i) + " "  + ANSI_RESET);
     }
 
     private void printTile(Tile tile) {
         String symbol;
         if (tile instanceof Piece piece) {
-            if (piece.getColor() == PieceColor.BLACK) {
-                symbol = (piece instanceof King) ? "◎" : "○";
-            } else {
-                symbol = (piece instanceof King) ? "◉" : "●";
-            }
-        } else if (possibleTilesToMove.contains(tile)) {
-            symbol = ANSI_YELLOW + "◊" + ANSI_RESET;
-        } else {
-            symbol = " ";
-        }
+            if (piece.getColor() == PieceColor.BLACK) symbol = (piece instanceof King) ? "◎" : "○";
+            else symbol = (piece instanceof King) ? "◉" : "●";
+        } else if (possibleTilesToMove.contains(tile)) symbol = ANSI_YELLOW + "◊";
+        else symbol = " ";
 
         if ((tile.getPosY() + tile.getPosX()) % 2 == 0) {
             String ANSI_WHITE_BG = "\u001b[47m";
-            System.out.print("|" + ANSI_WHITE_BG + " " + symbol + " " + ANSI_RESET);
-        } else System.out.print("|" + " " + symbol + " ");
+            System.out.print(ANSI_WHITE_BG + " " + symbol + " " + ANSI_RESET);
+        } else System.out.print( "\u001B[40m" + " " + symbol + " " + ANSI_RESET);
     }
 
     private void printCaptureMessage(List<Piece> capturingPieces) {
         if (!capturingPieces.isEmpty()) {
             System.out.print("You can only make a move with pieces that can capture your opponent's piece: ");
-            capturingPieces.forEach(piece -> {
-                System.out.print(ANSI_GREEN + (char) (piece.getPosX() + 'A') + (8 - piece.getPosY()) + ANSI_RESET + " ");
-            });
-            System.out.println();
+            printTilesCoordinates(capturingPieces);
         }
     }
 
     private void printPossibleMoves(List<Move> possibleMoves) {
         System.out.print("Available moves: ");
-        possibleMoves.forEach(item -> System.out.print(ANSI_GREEN + (char) (item.getToTile().getPosX() + 'A') + (8 - item.getToTile().getPosY()) + ANSI_RESET + " "));
+        printTilesCoordinates(possibleMoves.stream().map(Move::getTo).toList());
+    }
+
+    private void printTilesCoordinates(List<? extends Tile> targetTiles) {
+        List<String> coordinates = new ArrayList<>();
+        targetTiles.forEach(piece -> coordinates.add(String.valueOf((char) (piece.getPosX() + 'A')) + (8 - piece.getPosY())));
+        Collections.sort(coordinates);
+        coordinates.forEach(coordinate -> System.out.print(ANSI_GREEN + coordinate + ANSI_RESET + " "));
         System.out.println();
     }
 
@@ -386,7 +359,6 @@ public class ConsoleUI {
         final String ANSI_GREEN_BOLD = "\u001B[1;32m";
 
         System.out.println("--------------------------------------------------------------------------------------------------------------------------");
-
         System.out.println(ANSI_YELLOW_BOLD + "Rules\n\n" + ANSI_RESET + ANSI_YELLOW_BOLD + "Purpose: " + ANSI_RESET + "The goal of a game of checkers is to capture all of your opponent's pieces or \n" + "block them so that they cannot make any more moves." + " And also to earn as many points \n" + "as possible.\n" + "\n" + ANSI_YELLOW_BOLD + "Movement: " + ANSI_RESET + "The pieces can only move diagonally forward, one tile at a time, to a free tile. \n" + "Kings (after reaching the opponent's back row) can also move across all tiles on the diagonal, \n" + "as well as diagonally backwards.\n" + "\n" + ANSI_YELLOW_BOLD + "Capture: " + ANSI_RESET + "If a player's piece is adjacent to an opponent's piece and there is an empty tile \n" + "behind it diagonally, the player must jump over the opponent's piece, capturing it. If multiple \n" + "jumps are possible, they must be made in series.\n" + "\n" + ANSI_YELLOW_BOLD + "Coronation: " + ANSI_RESET + "When a player's piece reaches the opponent's back row, it is crowned as a \"king\". \n" + "Kings can move and capture pieces diagonally both forward and backward.\n" + "\n" + ANSI_YELLOW_BOLD + "Double Move: " + ANSI_RESET + "If a player's piece makes a capture that opens up the possibility of another capture \n" + "in the same turn, the player must continue to make consecutive captures as long as such opportunities\n" + "exist. In the event that, after capturing the first piece, there are several options for further captures,\n" + "the player has the right to choose which piece he wants to hit.\n" + "\n" + ANSI_YELLOW_BOLD + "End of the game: " + ANSI_RESET + "The game ends when one of the players captures all of the opponent's pieces or when one of\n" + "the players cannot make any of the allowed moves.\n" + "\n" + ANSI_GREEN_BOLD + "Score\n" + ANSI_RESET + "\n" + ANSI_GREEN_BOLD + "Regular Pieces: " + ANSI_RESET + "Each regular piece remaining in a player's possession at the end \n" + "of the game is worth 75 points.\n" + "\n" + ANSI_GREEN_BOLD + "Kings: " + ANSI_RESET + "A piece that has turned into a queen (passed across the board and reached the opposite edge) \n" + "is worth 150 points. Each subsequent king is worth twice as many points as the previous one.\n" + "\n" + ANSI_GREEN_BOLD + "Initial allocation of points: " + ANSI_RESET + "Each player starts the game with 10,000 points.\n" + "\n" + ANSI_GREEN_BOLD + "Deducting points for time: " + ANSI_RESET + "With each minute of play, a player loses 250 points.");
         System.out.println("--------------------------------------------------------------------------------------------------------------------------\n");
     }
@@ -396,9 +368,8 @@ public class ConsoleUI {
 
         System.out.println("----------------------------------------------------------------------");
         System.out.println("                            Top Scores!!!");
-        for (int i = 0; i < scores.size(); i++) {
+        for (int i = 0; i < scores.size(); i++)
             System.out.println((i + 1) + ": " + scores.get(i).getPlayer() + " " + scores.get(i).getPoints());
-        }
         System.out.println("----------------------------------------------------------------------");
     }
 
@@ -409,19 +380,16 @@ public class ConsoleUI {
         System.out.println("                            Last Comments!!!");
         comments.forEach(comment -> {
             System.out.println(comment.getPlayer() + ":");
-            System.out.println(comment.getText() + "\n");
+            System.out.println(comment.getComment() + "\n");
         });
         System.out.println("----------------------------------------------------------------------");
     }
 
-    private void printLastRatings() {
-        List<Rating> ratings = ratingService.getRating(GAME);
+    private void printGameRating() {
+        int gameRating = ratingService.getAverageRating(GAME);
 
-        System.out.println("----------------------------------------------------------------------");
-        System.out.println("                            Last Ratings!!!");
-        ratings.forEach(rating -> {
-            System.out.println(rating.getPlayer() + ": " + rating.getRating());
-        });
+        System.out.print("----------------------------------------------------------------------");
+        System.out.println("\n\u001B[1;34mGame Rating: " + ANSI_RESET + ANSI_YELLOW + gameRating + " / 5" + ANSI_RESET);
         System.out.println("----------------------------------------------------------------------");
     }
 

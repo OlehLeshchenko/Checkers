@@ -3,26 +3,30 @@ package sk.tuke.gamestudio.service;
 import sk.tuke.gamestudio.entity.Save;
 import sk.tuke.gamestudio.game.checkers.core.Field;
 
+import java.io.*;
 import java.util.List;
 
-public interface SaveService {
+public abstract class SaveService {
     /**
      * adds a new players to storage
+     *
      * @param save save object to be added
      */
-    void addSave(Save save);
+    public abstract void addSave(Save save);
 
     /**
-     * Get players from the storage for the game named <code>game</code>
-     * @param game name of the game
-     * @return list of the all saves
+     * Get players from the storage for the game named <code>game</code> and player name
+     *
+     * @param game   name of the game
+     * @param player name of the player
+     * @return list of the all player saves
      */
-    List<Save> getSaves(String game);
+    public abstract List<Save> getSaves(String game, String player);
 
     /**
      * deletes all saves in the storage (for all games)
      */
-    void reset();
+    public abstract void reset();
 
     /**
      * Serializes the given game field object into a byte array representation.
@@ -32,7 +36,15 @@ public interface SaveService {
      * @param field the game field object to be serialized
      * @return a byte array representing the serialized form of the game field
      */
-    byte[] serialize(Field field);
+    public byte[] serialize(Field field) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(field);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new GameStudioException(e);
+        }
+    }
 
     /**
      * Deserializes the given byte array representation into a game field object.
@@ -41,5 +53,12 @@ public interface SaveService {
      * @param bytes the byte array representing the serialized form of the game field
      * @return the reconstructed game field object
      */
-    Field deserialize(byte[] bytes);
+    public Field deserialize(byte[] bytes) {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return (Field) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new GameStudioException(e);
+        }
+    }
 }

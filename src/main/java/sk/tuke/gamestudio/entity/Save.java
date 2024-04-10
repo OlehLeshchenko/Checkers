@@ -1,65 +1,33 @@
 package sk.tuke.gamestudio.entity;
 
+import lombok.*;
 import sk.tuke.gamestudio.game.checkers.core.Field;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import java.util.Date;
 
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@NoArgsConstructor
+@Entity
 public class Save {
+    @Id
+    @GeneratedValue
+    private int id;
     private String player;
-
     private String game;
-
     private Field save;
+    private Date savedOn;
 
-    private Date savedAt;
-
-    private int playedTime;
-
-    public Save(String player, String game, Field save, Date savedAt, int playedTime) {
+    public Save(String player, String game, Field save, Date savedOn) {
         this.player = player;
         this.game = game;
         this.save = save;
-        this.savedAt = savedAt;
-        this.playedTime = playedTime;
+        this.savedOn = savedOn;
     }
 
-    public String getPlayer() {
-        return player;
-    }
-
-    public void setPlayer(String player) {
-        this.player = player;
-    }
-
-    public String getGame() {
-        return game;
-    }
-
-    public void setGame(String game) {
-        this.game = game;
-    }
-
-    public Field getSave() {
-        return save;
-    }
-
-    public void setSave(Field save) {
-        this.save = save;
-    }
-
-    public Date getSavedAt() {
-        return savedAt;
-    }
-
-    public void setSavedAt(Date savedAt) {
-        this.savedAt = savedAt;
-    }
-
-    public int getPlayedTime() {
-        return playedTime;
-    }
-
-    public void setPlayedTime(int playedTime) {
-        this.playedTime = playedTime;
-    }
 }

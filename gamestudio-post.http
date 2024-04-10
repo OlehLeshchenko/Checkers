@@ -1,0 +1,133 @@
+@rootUrl=http://localhost:8080/api
+
+POST {{rootUrl}}/score
+Content-Type: application/json
+
+{
+  "player": "player1",
+  "game": "checkers",
+  "points": 120,
+  "playedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/score
+Content-Type: application/json
+
+{
+  "player": "player2",
+  "game": "checkers",
+  "points": 150,
+  "playedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/score
+Content-Type: application/json
+
+{
+  "player": "player3",
+  "game": "dots",
+  "points": 180,
+  "playedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/score
+Content-Type: application/json
+
+{
+  "player": "player4",
+  "game": "checkers",
+  "points": 150,
+  "playedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/comment
+Content-Type: application/json
+
+{
+  "player": "player1",
+  "game": "checkers",
+  "comment": "Good game!",
+  "commentedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/comment
+Content-Type: application/json
+
+{
+  "player": "player2",
+  "game": "checkers",
+  "comment": "The best game ever!!!",
+  "commentedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/comment
+Content-Type: application/json
+
+{
+  "player": "player3",
+  "game": "badGame",
+  "comment": "The worst game ever!!!",
+  "commentedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/comment
+Content-Type: application/json
+
+{
+  "player": "player4",
+  "game": "checkers",
+  "comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+  "commentedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/rating
+Content-Type: application/json
+
+{
+  "player": "player1",
+  "game": "checkers",
+  "rating": 5,
+  "ratedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/rating
+Content-Type: application/json
+
+{
+  "player": "player2",
+  "game": "checkers",
+  "rating": 4,
+  "ratedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/rating
+Content-Type: application/json
+
+{
+  "player": "player4",
+  "game": "checkers",
+  "rating": 2,
+  "ratedOn": "2024-04-08T12:00:00"
+}
+
+###
+POST {{rootUrl}}/rating
+Content-Type: application/json
+
+{
+  "player": "player4",
+  "game": "checkers",
+  "rating": 4,
+  "ratedOn": "2024-04-08T12:00:00"
+}
+

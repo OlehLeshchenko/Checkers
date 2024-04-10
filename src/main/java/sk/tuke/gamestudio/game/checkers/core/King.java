@@ -1,6 +1,7 @@
 package sk.tuke.gamestudio.game.checkers.core;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class King extends Piece {
@@ -23,20 +24,17 @@ public class King extends Piece {
             int yOffset = direction[1];
 
             for (int i = 1; i <= field.getColumnCount(); i++) {
-
                 Move move = createMoveFromPosition(field, x, y, i * xOffset, i * yOffset);
                 if (move != null) {
                     if (move.isCaptured()) {
                         if (!isCapturedMoveDetected) possibleMoves.clear();
                         possibleMoves.add(move);
                         isCapturedMoveDetected = true;
-                        break;
                     } else if (!isCapturedMoveDetected) possibleMoves.add(move);
-                } else break; // Це ще під питанням чи треба взагалі тут break
+                } else break;
             }
         }
-
-        return possibleMoves;
+        return new ArrayList<>(new HashSet<>(possibleMoves));
     }
 
 }

@@ -2,8 +2,6 @@ package sk.tuke.gamestudio.service;
 
 import sk.tuke.gamestudio.entity.Rating;
 
-import java.util.List;
-
 public interface RatingService {
     /**
      * sets rating to storage
@@ -12,11 +10,12 @@ public interface RatingService {
     void setRating(Rating rating);
 
     /**
-     * Get all ratings from the storage for the game named <code>game</code>
+     * Get rating from the storage for the game named <code>game</code> and player
      * @param game name of the game
-     * @return list of ratings
+     * @param player name of the player
+     * @return player game rating
      */
-    List<Rating> getRating(String game);
+    int getRating(String game, String player);
 
     /**
      * Get average rating from the storage for the game named <code>game</code>

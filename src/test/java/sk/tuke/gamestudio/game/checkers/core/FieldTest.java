@@ -3,6 +3,7 @@ package sk.tuke.gamestudio.game.checkers.core;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,8 +48,8 @@ public class FieldTest {
         Tile pieceA3 = field.getTiles()[5][0];
         List<Move> pieceA3Moves = ((Piece) pieceA3).getPossibleMoves(field);
         assertEquals(1, pieceA3Moves.size());
-        assertEquals(pieceA3, pieceA3Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[4][1], pieceA3Moves.get(0).getToTile());
+        assertEquals(pieceA3, pieceA3Moves.get(0).getFrom());
+        assertEquals(field.getTiles()[4][1], pieceA3Moves.get(0).getTo());
         assertFalse(pieceA3Moves.get(0).isCaptured());
 
 
@@ -56,12 +57,12 @@ public class FieldTest {
         List<Move> pieceC3Moves = ((Piece) pieceC3).getPossibleMoves(field);
         assertEquals(2, pieceC3Moves.size());
 
-        assertEquals(pieceC3, pieceC3Moves.get(0).getFromTile());
+        assertEquals(pieceC3, pieceC3Moves.get(0).getFrom());
 
-        assertEquals(field.getTiles()[4][1], pieceC3Moves.get(0).getToTile());
+        assertEquals(field.getTiles()[4][1], pieceC3Moves.get(0).getTo());
         assertFalse(pieceC3Moves.get(0).isCaptured());
 
-        assertEquals(field.getTiles()[4][3], pieceC3Moves.get(1).getToTile());
+        assertEquals(field.getTiles()[4][3], pieceC3Moves.get(1).getTo());
         assertFalse(pieceC3Moves.get(1).isCaptured());
 
         Tile pieceA1 = field.getTiles()[7][0];
@@ -82,14 +83,14 @@ public class FieldTest {
         List<Move> pieceA1Moves = pieceA1.getPossibleMoves(field);
         assertEquals(1, pieceA1Moves.size());
         assertTrue(pieceA1Moves.get(0).isCaptured());
-        assertEquals(pieceA1, pieceA1Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[5][2], pieceA1Moves.get(0).getToTile());
+        assertEquals(pieceA1, pieceA1Moves.get(0).getFrom());
+        assertEquals(field.getTiles()[5][2], pieceA1Moves.get(0).getTo());
 
         List<Move> pieceC1Moves = pieceC1.getPossibleMoves(field);
         assertEquals(1, pieceC1Moves.size());
         assertTrue(pieceC1Moves.get(0).isCaptured());
-        assertEquals(pieceC1, pieceC1Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[5][0], pieceC1Moves.get(0).getToTile());
+        assertEquals(pieceC1, pieceC1Moves.get(0).getFrom());
+        assertEquals(field.getTiles()[5][0], pieceC1Moves.get(0).getTo());
     }
 
     @Test
@@ -101,12 +102,15 @@ public class FieldTest {
         List<Move> pieceA3Moves = (pieceA3).getPossibleMoves(field);
         assertEquals(2, pieceA3Moves.size());
 
-        assertEquals(pieceA3, pieceA3Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[4][1], pieceA3Moves.get(0).getToTile());
+        List<Tile> targetTilesA3 = new ArrayList<>();
+        pieceA3Moves.forEach(move -> targetTilesA3.add(move.getTo()));
+
+        assertEquals(pieceA3, pieceA3Moves.get(0).getFrom());
+        assertTrue(targetTilesA3.contains(field.getTiles()[4][1]));
         assertFalse(pieceA3Moves.get(0).isCaptured());
 
-        assertEquals(pieceA3, pieceA3Moves.get(1).getFromTile());
-        assertEquals(field.getTiles()[3][2], pieceA3Moves.get(1).getToTile());
+        assertEquals(pieceA3, pieceA3Moves.get(1).getFrom());
+        assertTrue(targetTilesA3.contains(field.getTiles()[3][2]));
         assertFalse(pieceA3Moves.get(1).isCaptured());
 
         Piece pieceC3 = new King(2, 5, PieceColor.WHITE);
@@ -114,20 +118,23 @@ public class FieldTest {
         List<Move> pieceC3Moves = (pieceC3).getPossibleMoves(field);
         assertEquals(4, pieceC3Moves.size());
 
-        assertEquals(pieceC3, pieceC3Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[4][1], pieceC3Moves.get(0).getToTile());
+        List<Tile> targetTilesC3 = new ArrayList<>();
+        pieceC3Moves.forEach(move -> targetTilesC3.add(move.getTo()));
+
+        assertEquals(pieceC3, pieceC3Moves.get(0).getFrom());
+        assertTrue(targetTilesC3.contains(field.getTiles()[4][1]));
         assertFalse(pieceC3Moves.get(0).isCaptured());
 
-        assertEquals(pieceC3, pieceC3Moves.get(1).getFromTile());
-        assertEquals(field.getTiles()[3][0], pieceC3Moves.get(1).getToTile());
+        assertEquals(pieceC3, pieceC3Moves.get(1).getFrom());
+        assertTrue(targetTilesC3.contains(field.getTiles()[3][0]));
         assertFalse(pieceC3Moves.get(1).isCaptured());
 
-        assertEquals(pieceC3, pieceC3Moves.get(2).getFromTile());
-        assertEquals(field.getTiles()[4][3], pieceC3Moves.get(2).getToTile());
+        assertEquals(pieceC3, pieceC3Moves.get(2).getFrom());
+        assertTrue(targetTilesC3.contains(field.getTiles()[4][3]));
         assertFalse(pieceC3Moves.get(2).isCaptured());
 
-        assertEquals(pieceC3, pieceC3Moves.get(3).getFromTile());
-        assertEquals(field.getTiles()[3][4], pieceC3Moves.get(3).getToTile());
+        assertEquals(pieceC3, pieceC3Moves.get(3).getFrom());
+        assertTrue(targetTilesC3.contains(field.getTiles()[3][4]));
         assertFalse(pieceC3Moves.get(3).isCaptured());
     }
 
@@ -142,16 +149,40 @@ public class FieldTest {
         field.setPieceToField(pieceB2);
 
         List<Move> pieceA1Moves = pieceA1.getPossibleMoves(field);
-        assertEquals(1, pieceA1Moves.size());
+        assertEquals(6, pieceA1Moves.size());
+
+        List<Tile> targetTiles = new ArrayList<>();
+        pieceA1Moves.forEach(move -> targetTiles.add(move.getTo()));
+
         assertTrue(pieceA1Moves.get(0).isCaptured());
-        assertEquals(pieceA1, pieceA1Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[5][2], pieceA1Moves.get(0).getToTile());
+        assertEquals(pieceA1, pieceA1Moves.get(0).getFrom());
+        assertTrue(targetTiles.contains(field.getTiles()[5][2]));
+
+        assertTrue(pieceA1Moves.get(1).isCaptured());
+        assertEquals(pieceA1, pieceA1Moves.get(1).getFrom());
+        assertTrue(targetTiles.contains(field.getTiles()[4][3]));
+
+        assertTrue(pieceA1Moves.get(2).isCaptured());
+        assertEquals(pieceA1, pieceA1Moves.get(2).getFrom());
+        assertTrue(targetTiles.contains(field.getTiles()[3][4]));
+
+        assertTrue(pieceA1Moves.get(3).isCaptured());
+        assertEquals(pieceA1, pieceA1Moves.get(3).getFrom());
+        assertTrue(targetTiles.contains(field.getTiles()[2][5]));
+
+        assertTrue(pieceA1Moves.get(4).isCaptured());
+        assertEquals(pieceA1, pieceA1Moves.get(4).getFrom());
+        assertTrue(targetTiles.contains(field.getTiles()[1][6]));
+
+        assertTrue(pieceA1Moves.get(5).isCaptured());
+        assertEquals(pieceA1, pieceA1Moves.get(5).getFrom());
+        assertTrue(targetTiles.contains(field.getTiles()[0][7]));
 
         List<Move> pieceC1Moves = pieceC1.getPossibleMoves(field);
         assertEquals(1, pieceC1Moves.size());
         assertTrue(pieceC1Moves.get(0).isCaptured());
-        assertEquals(pieceC1, pieceC1Moves.get(0).getFromTile());
-        assertEquals(field.getTiles()[5][0], pieceC1Moves.get(0).getToTile());
+        assertEquals(pieceC1, pieceC1Moves.get(0).getFrom());
+        assertEquals(field.getTiles()[5][0], pieceC1Moves.get(0).getTo());
     }
 
 }

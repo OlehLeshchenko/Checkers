@@ -1,59 +1,32 @@
 package sk.tuke.gamestudio.entity;
 
+import lombok.*;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import java.util.Date;
-
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@NoArgsConstructor
+@Entity
 public class Comment {
+    @Id
+    @GeneratedValue
+    private int id;
     private String player;
-
     private String game;
+    private String comment;
+    private Date commentedOn;
 
-    private String text;
-
-    private Date commentedAt;
-
-    public Comment(String player, String game, String text, Date commentedAt) {
+    public Comment(String player, String game, String comment, Date commentedOn) {
         this.player = player;
         this.game = game;
-        this.text = text;
-        this.commentedAt = commentedAt;
+        this.comment = comment;
+        this.commentedOn = commentedOn;
     }
-
-    public String getPlayer() {
-        return player;
-    }
-
-    public void setPlayer(String player) {
-        this.player = player;
-    }
-
-    public String getGame() {
-        return game;
-    }
-
-    public void setGame(String game) {
-        this.game = game;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public Date getCommentedAt() {
-        return commentedAt;
-    }
-
-    public void setCommentedAt(Date commentedAt) {
-        this.commentedAt = commentedAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Comment{" + "player='" + player + '\'' + ", game='" + game + '\'' + ", text='" + text + '\'' + ", commentedAt=" + commentedAt + '}';
-    }
-
 
 }
+

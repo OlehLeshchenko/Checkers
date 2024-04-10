@@ -1,57 +1,29 @@
 package sk.tuke.gamestudio.entity;
 
+import lombok.*;
+
+import jakarta.persistence.*;
 import java.util.Date;
 
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@NoArgsConstructor
+@Entity
 public class Rating {
+    @Id
     private String player;
-
+    @Id
     private String game;
-
     private int rating;
+    private Date ratedOn;
 
-    private Date ratedAt;
-
-    public Rating(String player, String game, int rating, Date ratedAt) {
+    public Rating(String player, String game, int rating, Date ratedOn) {
         this.player = player;
         this.game = game;
         this.rating = rating;
-        this.ratedAt = ratedAt;
+        this.ratedOn = ratedOn;
     }
 
-    public String getPlayer() {
-        return player;
-    }
-
-    public void setPlayer(String player) {
-        this.player = player;
-    }
-
-    public String getGame() {
-        return game;
-    }
-
-    public void setGame(String game) {
-        this.game = game;
-    }
-
-    public int getRating() {
-        return rating;
-    }
-
-    public void setRating(int rating) {
-        this.rating = rating;
-    }
-
-    public Date getRatedAt() {
-        return ratedAt;
-    }
-
-    public void setRatedAt(Date ratedAt) {
-        this.ratedAt = ratedAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Score{" + "player='" + player + '\'' + ", game='" + game + '\'' + ", rating=" + rating + ", ratedAt=" + ratedAt + '}';
-    }
 }
