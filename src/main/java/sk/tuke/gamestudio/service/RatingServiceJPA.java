@@ -1,5 +1,6 @@
 package sk.tuke.gamestudio.service;
 
+import jakarta.persistence.NoResultException;
 import sk.tuke.gamestudio.entity.Rating;
 
 import jakarta.persistence.EntityManager;
@@ -8,27 +9,36 @@ import jakarta.transaction.Transactional;
 
 @Transactional
 public class RatingServiceJPA implements RatingService{
-    private static final String INSERT_STATEMENT = "INSERT INTO Rating (player, game, rating, rated_on) VALUES (?, ?, ?, ?) ON CONFLICT (player, game) DO UPDATE SET rating = EXCLUDED.rating, rated_on = EXCLUDED.rated_on;";
-
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
     public void setRating(Rating rating) {
-        entityManager.createNativeQuery(INSERT_STATEMENT)
-                .setParameter(1, rating.getPlayer())
-                .setParameter(2, rating.getGame())
-                .setParameter(3, rating.getRating())
-                .setParameter(4, rating.getRatedOn())
-                .executeUpdate();
+        try {
+            Rating existingRating = entityManager.createQuery("SELECT r FROM Rating r WHERE r.player = :player AND r.game = :game", Rating.class)
+                    .setParameter("player", rating.getPlayer())
+                    .setParameter("game", rating.getGame())
+                    .getSingleResult();
+            existingRating.setRating(rating.getRating());
+            existingRating.setRatedOn(rating.getRatedOn());
+        } catch (NoResultException e) {
+            entityManager.persist(rating);
+        }
+
     }
 
     @Override
     public int getRating(String game, String player) {
-       return entityManager.createQuery("SELECT r.rating FROM Rating r WHERE r.game=:game AND r.player=:player", Integer.class)
-               .setParameter("game", game)
-               .setParameter("player", player)
-               .getSingleResult();
+        Integer result;
+        try {
+            result = entityManager.createQuery("SELECT r.rating FROM Rating r WHERE r.game=:game AND r.player=:player", Integer.class)
+                    .setParameter("game", game)
+                    .setParameter("player", player)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            result = 0;
+        }
+        return result;
     }
 
     @Override

@@ -19,7 +19,7 @@ public class CommentServiceJPA implements CommentService{
 
     @Override
     public List<Comment> getComments(String game) {
-        return entityManager.createQuery("SELECT c FROM Comment c WHERE c.game=:game ORDER BY c.commentedOn", Comment.class)
+        return entityManager.createQuery("SELECT c FROM Comment c WHERE c.game=:game ORDER BY c.commentedOn DESC", Comment.class)
                 .setParameter("game", game)
                 .getResultList();
     }

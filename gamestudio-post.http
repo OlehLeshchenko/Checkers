@@ -131,3 +131,13 @@ Content-Type: application/json
   "ratedOn": "2024-04-08T12:00:00"
 }
 
+###
+POST {{rootUrl}}/user
+Content-Type: application/json
+
+{
+  "nickname": "admin",
+  "password": "admin"
+}
+
+

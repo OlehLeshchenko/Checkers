@@ -13,8 +13,9 @@ import java.util.Date;
 @Entity
 public class Rating {
     @Id
+    @GeneratedValue
+    private int id;
     private String player;
-    @Id
     private String game;
     private int rating;
     private Date ratedOn;

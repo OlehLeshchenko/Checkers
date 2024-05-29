@@ -35,4 +35,10 @@ public class GameStudioServer {
         return new SaveServiceJPA();
     }
 
+    @Bean
+    public UserService userService() {
+        return new UserServiceJPA();
+    }
+
+
 }

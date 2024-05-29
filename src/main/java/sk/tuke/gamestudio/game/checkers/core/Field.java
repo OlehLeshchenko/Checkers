@@ -36,6 +36,10 @@ public class Field implements Serializable {
     public Field() {
     }
 
+    public Field(Boolean generate) {
+        if (generate) this.generate();
+    }
+
     public void incrementPlayedTime(int additionalTime) {
         this.playedTime += additionalTime;
     }
